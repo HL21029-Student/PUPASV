@@ -1,0 +1,34 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.control;
+
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Stateless;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import java.io.Serializable;
+import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity.TipoProducto;
+
+/**
+ *
+ * @author lf22004
+ */
+@Stateless
+@LocalBean
+public class TipoProductoBean extends AbstractDataAccess<TipoProducto> implements Serializable{
+    @PersistenceContext(unitName="PupaSV-PU")
+    EntityManager em;
+    
+    
+    public TipoProductoBean(){
+        super(TipoProducto.class);
+    } 
+    
+    @Override
+    public EntityManager getEntityManager() {
+        return em;
+    }
+    
+}
