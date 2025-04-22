@@ -26,7 +26,8 @@ import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity.Orden;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @Path("orden")
 public class OrdenResource implements Serializable {

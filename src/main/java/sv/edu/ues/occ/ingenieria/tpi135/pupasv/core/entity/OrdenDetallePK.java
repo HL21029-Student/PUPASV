@@ -12,7 +12,8 @@ import java.io.Serializable;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @Embeddable
 public class OrdenDetallePK implements Serializable {

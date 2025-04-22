@@ -4,6 +4,8 @@
  */
 package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,7 +25,8 @@ import java.math.BigDecimal;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @Entity
 @Table(name = "pago_detalle", catalog = "tipicos_tpi135", schema = "public")
@@ -47,6 +50,8 @@ public class PagoDetalle implements Serializable {
     @Size(max = 2147483647)
     @Column(name = "observaciones", length = 2147483647)
     private String observaciones;
+    
+    @JsonIgnore
     @JoinColumn(name = "id_pago", referencedColumnName = "id_pago")
     @ManyToOne(fetch = FetchType.LAZY)
     private Pago idPago;

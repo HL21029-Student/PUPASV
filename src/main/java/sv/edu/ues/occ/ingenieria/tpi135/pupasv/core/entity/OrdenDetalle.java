@@ -4,6 +4,8 @@
  */
 package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
@@ -22,7 +24,8 @@ import java.math.BigDecimal;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @Entity
 @Table(name = "orden_detalle", catalog = "tipicos_tpi135", schema = "public")
@@ -49,9 +52,13 @@ public class OrdenDetalle implements Serializable {
     @Size(max = 2147483647)
     @Column(name = "observaciones", length = 2147483647)
     private String observaciones;
+    
+    @JsonIgnore
     @JoinColumn(name = "id_orden", referencedColumnName = "id_orden", nullable = false, insertable = false, updatable = false)
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Orden orden;
+    
+    @JsonIgnore
     @JoinColumn(name = "id_producto_precio", referencedColumnName = "id_producto_precio", nullable = false, insertable = false, updatable = false)
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private ProductoPrecio productoPrecio;

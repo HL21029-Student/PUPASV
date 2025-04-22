@@ -4,6 +4,8 @@
  */
 package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -18,7 +20,8 @@ import java.io.Serializable;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @Entity
 @Table(name = "combo_detalle", catalog = "tipicos_tpi135", schema = "public")
@@ -38,9 +41,13 @@ public class ComboDetalle implements Serializable {
     private Integer cantidad;
     @Column(name = "activo")
     private Boolean activo;
+    
+    @JsonIgnore
     @JoinColumn(name = "id_combo", referencedColumnName = "id_combo", nullable = false, insertable = false, updatable = false)
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Combo combo;
+    
+    @JsonIgnore
     @JoinColumn(name = "id_producto", referencedColumnName = "id_producto", nullable = false, insertable = false, updatable = false)
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Producto producto;

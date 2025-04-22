@@ -4,6 +4,9 @@
  */
 package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -27,7 +30,8 @@ import java.util.List;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @Entity
 @Table(name = "orden", catalog = "tipicos_tpi135", schema = "public")
@@ -54,8 +58,12 @@ public class Orden implements Serializable {
     private String sucursal;
     @Column(name = "anulada")
     private Boolean anulada;
+    
+    @JsonbTransient
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "orden", fetch = FetchType.LAZY)
     private List<OrdenDetalle> ordenDetalleList;
+    
+    @JsonbTransient
     @OneToMany(mappedBy = "idOrden", fetch = FetchType.LAZY)
     private List<Pago> pagoList;
 

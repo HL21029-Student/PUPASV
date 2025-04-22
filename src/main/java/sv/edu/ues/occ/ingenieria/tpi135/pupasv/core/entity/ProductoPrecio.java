@@ -4,6 +4,10 @@
  */
 package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -29,7 +33,7 @@ import java.util.List;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
  */
 @Entity
 @Table(name = "producto_precio", catalog = "tipicos_tpi135", schema = "public")
@@ -57,8 +61,12 @@ public class ProductoPrecio implements Serializable {
     // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
     @Column(name = "precio_sugerido", precision = 8, scale = 2)
     private BigDecimal precioSugerido;
+    
+    @JsonbTransient
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "productoPrecio", fetch = FetchType.LAZY)
     private List<OrdenDetalle> ordenDetalleList;
+    
+    @JsonIgnore
     @JoinColumn(name = "id_producto", referencedColumnName = "id_producto")
     @ManyToOne(fetch = FetchType.LAZY)
     private Producto idProducto;

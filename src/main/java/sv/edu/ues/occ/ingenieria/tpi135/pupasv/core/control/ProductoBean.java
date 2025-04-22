@@ -24,7 +24,8 @@ import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity.ProductoPrecio;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @Stateless
 @LocalBean

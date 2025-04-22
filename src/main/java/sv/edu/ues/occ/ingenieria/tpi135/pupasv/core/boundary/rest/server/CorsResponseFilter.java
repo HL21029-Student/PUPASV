@@ -17,7 +17,8 @@ import java.io.IOException;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @WebFilter("/*")
 public class CorsResponseFilter implements Filter {

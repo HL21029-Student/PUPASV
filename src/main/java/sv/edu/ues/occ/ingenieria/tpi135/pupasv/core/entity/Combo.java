@@ -4,6 +4,9 @@
  */
 package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -23,7 +26,8 @@ import java.util.List;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @Entity
 @Table(name = "combo", catalog = "tipicos_tpi135", schema = "public")
@@ -50,6 +54,8 @@ public class Combo implements Serializable {
     @Size(max = 2147483647)
     @Column(name = "descripcion_publica", length = 2147483647)
     private String descripcionPublica;
+    
+    @JsonbTransient
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "combo", fetch = FetchType.LAZY)
     private List<ComboDetalle> comboDetalleList;
 

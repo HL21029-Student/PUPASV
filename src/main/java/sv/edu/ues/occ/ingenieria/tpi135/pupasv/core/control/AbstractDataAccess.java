@@ -19,7 +19,8 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 public abstract  class AbstractDataAccess<T> {
         // Se parametriza para mayor seguridad de tipos

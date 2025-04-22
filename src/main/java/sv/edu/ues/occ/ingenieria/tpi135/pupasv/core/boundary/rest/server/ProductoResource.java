@@ -6,7 +6,8 @@ package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.boundary.rest.server;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 
 import jakarta.inject.Inject;
@@ -36,7 +37,8 @@ import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity.ProductoPrecio;
 
 /**
  *
- * @author lf22004
+ * @author HL21029
+
  */
 @Path("producto")
 public class ProductoResource implements Serializable {
