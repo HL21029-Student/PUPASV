@@ -1,0 +1,302 @@
+package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.boundary.rest.server;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.util.logging.Logger;
+import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.control.PagoBean;
+import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity.Pago;
+
+import java.util.List;
+
+@Path("/pagos")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class PagoResource {
+    
+    private static final Logger LOGGER = Logger.getLogger(PagoResource.class.getName());
+
+    @Inject
+    PagoBean pagoBean;
+
+    /**
+     * Endpoint to create a new payment.
+     *
+     * @param pago The payment details.
+     * @return A response indicating the success or failure of the payment creation.
+     */
+    @POST
+    public Response create(Pago pago) {
+        try {
+            // Call the PagoBean to create the payment.
+            pagoBean.create(pago);
+            return Response.ok(pago).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error creating payment: " + e.getMessage()).build();
+        }
+    }
+
+    /**
+     * Endpoint to retrieve all payments for a specific order.
+     *
+     * @param idOrden The ID of the order.
+     * @return A list of payments for the specified order.
+     */
+    @GET
+    @Path("/{id_orden}")
+    public Response findByIdOrden(@PathParam("id_orden") Integer idOrden) {
+        try {
+
+import java.util.List;
+
+@Stateless
+public class PagoBean extends AbstractDataAccess<Pago> {
+
+    @PersistenceContext(unitName = "PU_PupaSV")
+    EntityManager em;
+
+    @Override
+    public EntityManager getEntityManager() {
+        return em;
+    }
+
+    public PagoBean() {
+        super(Pago.class);
+    }
+
+    /**
+     * Method to create a new payment.
+     *
+     * @param entity The payment details.
+     */
+    public void create(Pago entity) {
+        // Find the order to update the state
+        Orden orden = em.find(Orden.class, entity.getIdOrden());
+        if (orden != null) {
+            orden.setEstado(EstadoOrden.PAGADO);
+            em.merge(orden);
+        }
+        super.create(entity);
+    }
+    /**
+     * Method to find all payments for a specific order.
+     *
+     * @param idOrden The ID of the order.
+     * @return A list of payments for the specified order.
+     */
+    public List<Pago> findByIdOrden(int idOrden) {
+        TypedQuery<Pago> query = em.createNamedQuery("Pago.findByIdOrden", Pago.class);
+        query.setParameter("idOrden", idOrden);
+        return query.getResultList();
+    }
+}
+java
+
+import jakarta.persistence.*;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+
+@Entity
+@Table(name = "pago")
+@NamedQueries({
+        @NamedQuery(name = "Pago.findAll", query = "SELECT p FROM Pago p"),
+        @NamedQuery(name = "Pago.findByIdPago", query = "SELECT p FROM Pago p WHERE p.idPago = :idPago"),
+        @NamedQuery(name = "Pago.findByIdOrden", query = "SELECT p FROM Pago p WHERE p.idOrden = :idOrden")
+})
+public class Pago implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_pago")
+    private Integer idPago;
+
+    @Column(name = "id_orden")
+    private Integer idOrden;
+
+    @OneToMany(mappedBy = "pago")
+    private List<PagoDetalle> pagoDetalleList;
+
+    public Pago() {
+    }
+
+    public Integer getIdPago() {
+        return idPago;
+    }
+
+    public void setIdPago(Integer idPago) {
+        this.idPago = idPago;
+    }
+
+    public Integer getIdOrden() {
+        return idOrden;
+    }
+
+    public void setIdOrden(Integer idOrden) {
+        this.idOrden = idOrden;
+    }
+
+    public List<PagoDetalle> getPagoDetalleList() {
+        return pagoDetalleList;
+    }
+
+    public void setPagoDetalleList(List<PagoDetalle> pagoDetalleList) {
+        this.pagoDetalleList = pagoDetalleList;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pago pago = (Pago) o;
+        return Objects.equals(idPago, pago.idPago);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(idPago);
+    }
+}
+java
+
+import jakarta.persistence.*;
+
+import java.io.Serializable;
+import java.util.Objects;
+
+@Entity
+@Table(name = "pago_detalle")
+public class PagoDetalle implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @EmbeddedId
+    protected PagoDetallePK pagoDetallePK;
+
+    @Column(name = "monto")
+    private double monto;
+    @JoinColumn(name = "id_pago", referencedColumnName = "id_pago", insertable = false, updatable = false)
+    @ManyToOne(optional = false)
+    private Pago pago;
+
+    public PagoDetalle() {
+    }
+
+    public PagoDetallePK getPagoDetallePK() {
+        return pagoDetallePK;
+    }
+
+    public void setPagoDetallePK(PagoDetallePK pagoDetallePK) {
+        this.pagoDetallePK = pagoDetallePK;
+    }
+
+    public double getMonto() {
+        return monto;
+    }
+
+    public void setMonto(double monto) {
+        this.monto = monto;
+    }
+
+    public Pago getPago() {
+        return pago;
+    }
+
+    public void setPago(Pago pago) {
+        this.pago = pago;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PagoDetalle that = (PagoDetalle) o;
+        return Objects.equals(pagoDetallePK, that.pagoDetallePK);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pagoDetallePK);
+    }
+}
+java
+
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import java.io.Serializable;
+import java.util.Objects;
+
+@Embeddable
+public class PagoDetallePK implements Serializable {
+
+    @Basic(optional = false)
+    @Column(name = "id_pago")
+    private int idPago;
+    @Basic(optional = false)
+    @Column(name = "tipo_pago")
+    private String tipoPago;
+
+    public PagoDetallePK() {
+    }
+
+    public PagoDetallePK(int idPago, String tipoPago) {
+        this.idPago = idPago;
+        this.tipoPago = tipoPago;
+    }
+
+    public int getIdPago() {
+        return idPago;
+    }
+
+    public void setIdPago(int idPago) {
+        this.idPago = idPago;
+    }
+
+    public String getTipoPago() {
+        return tipoPago;
+    }
+
+    public void setTipoPago(String tipoPago) {
+        this.tipoPago = tipoPago;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 17 * hash + this.idPago;
+        hash = 17 * hash + Objects.hashCode(this.tipoPago);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final PagoDetallePK other = (PagoDetallePK) obj;
+        if (this.idPago != other.idPago) {
+            return false;
+        }
+        return Objects.equals(this.tipoPago, other.tipoPago);
+    }
+
+    @Override
+    public String toString() {
+        return "PagoDetallePK{" +
+                "idPago=" + idPago +
+                ", tipoPago='" + tipoPago + '\'' +
+                '}';
+    }
+}

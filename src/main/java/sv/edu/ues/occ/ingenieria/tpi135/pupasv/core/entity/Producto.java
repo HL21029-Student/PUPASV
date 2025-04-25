@@ -38,7 +38,9 @@ import java.util.List;
     @NamedQuery(name = "Producto.findByIdProducto", query = "SELECT p FROM Producto p WHERE p.idProducto = :idProducto"),
     @NamedQuery(name = "Producto.findByNombre", query = "SELECT p FROM Producto p WHERE p.nombre = :nombre"),
     @NamedQuery(name = "Producto.findByActivo", query = "SELECT p FROM Producto p WHERE p.activo = :activo"),
-    @NamedQuery(name = "Producto.findByObservaciones", query = "SELECT p FROM Producto p WHERE p.observaciones = :observaciones")})
+    @NamedQuery(name = "Producto.findByObservaciones", query = "SELECT p FROM Producto p WHERE p.observaciones = :observaciones"),
+    @NamedQuery(name = "Producto.findProductsInTipoProducto",query = "SELECT p.idProducto, p.nombre, pp.precioSugerido, p.activo,p.observaciones FROM ProductoDetalle pd JOIN pd.producto p JOIN p.productoPrecioList pp WHERE pd.productoDetallePK.idTipoProducto = :idTipoProducto AND p.activo = true")})
+
 public class Producto implements Serializable {
 
     private static final long serialVersionUID = 1L;

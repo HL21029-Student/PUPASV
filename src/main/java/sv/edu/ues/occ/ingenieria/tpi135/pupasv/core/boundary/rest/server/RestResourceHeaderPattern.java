@@ -14,7 +14,6 @@ import jakarta.ws.rs.ext.Provider;
 /**
  *
  * @author HL21029
-
  */
 
 public class RestResourceHeaderPattern{

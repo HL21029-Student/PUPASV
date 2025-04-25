@@ -1,270 +1,202 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.boundary.rest.server;
 
-/**
- *
- * @author HL21029
-
- */
-
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import jakarta.persistence.NoResultException;
+import jakarta.validation.Valid; // Para validación de DTOs (opcional)
+import jakarta.validation.constraints.NotNull; // Para validación de DTOs (opcional)
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
 import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.control.ProductoBean;
-import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity.Combo;
+import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.control.TipoProductoBean; // Necesario para buscar TipoProducto por ID
 import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity.Producto;
 import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity.ProductoPrecio;
+import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.entity.TipoProducto;
 
-/**
- *
- * @author HL21029
+import java.math.BigDecimal;
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.boundary.rest.server.DataTransferObject.PrecioDTO;
+import sv.edu.ues.occ.ingenieria.tpi135.pupasv.core.boundary.rest.server.DataTransferObject.ProductoDTO;
 
- */
-@Path("producto")
-public class ProductoResource implements Serializable {
+@Path("productos")
+@RequestScoped
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class ProductoResource {
 
     private static final Logger LOGGER = Logger.getLogger(ProductoResource.class.getName());
 
     @Inject
-    ProductoBean pBean;
+    ProductoBean productoBean;
 
-    // CRUD Básico
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response findRange(
-            @QueryParam("first") @DefaultValue("0") int first,
-            @QueryParam("page_Size") @DefaultValue("50") int pageSize) {
-        try {
-            List<Producto> lista = pBean.findRange(first, pageSize);
-            int total = pBean.count().intValue();
-            LOGGER.log(Level.INFO, "Consultando productos: desde {0}, tamaño página {1}", new Object[]{first, pageSize});
-            return Response.ok(lista)
-                    .header("total-registros", total)
-                    .build();
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al consultar productos. Parámetros: first={0}, pageSize={1}", new Object[]{first, pageSize});
-            return Response.serverError()
-                    .entity(Collections.emptyList())
-                    .build();
-        }
-    }
+    @Inject
+    TipoProductoBean tipoProductoBean; // Inyectar para buscar Tipos por ID
 
-    @GET
-    @Path("{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response findById(@PathParam("id") Long id) {
-        try {
-            Producto producto = pBean.findById(id);
-            if (producto != null) {
-                LOGGER.log(Level.INFO, "Producto encontrado ID: {0}", id);
-                return Response.ok(producto).build();
-            } else {
-                LOGGER.log(Level.WARNING, "Producto no encontrado ID: {0}", id);
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al buscar producto ID: {0}", id);
-            return Response.serverError()
-                    .entity("Error interno: " + e.getMessage())
-                    .build();
-        }
-    }
+    @Context
+    UriInfo uriInfo;
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response create(Producto producto) {
+    public Response crearProducto(@Valid ProductoDTO dto) { // @Valid activa validación si se usan annotations
+        if (dto == null || dto.getNombre() == null || dto.getNombre().isBlank() || dto.getIdTiposProducto() == null || dto.getIdTiposProducto().isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                           .entity("Nombre y al menos un idTipoProducto son requeridos.")
+                           .build();
+        }
+ 
         try {
-            if (producto == null) {
+            List<TipoProducto> tipos = dto.getIdTiposProducto().stream()
+                    .map(id -> tipoProductoBean.findById(id))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            if (tipos.size() != dto.getIdTiposProducto().size()) {
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("Datos del producto requeridos")
+                        .entity("Uno o más idTipoProducto no son válidos.")
                         .build();
             }
-            pBean.create(producto);
-            LOGGER.log(Level.INFO, "Producto creado ID: {0}", producto.getIdProducto());
-            return Response.status(Response.Status.CREATED).entity(producto).build();
+
+            Producto nuevoProducto = productoBean.crearProducto(dto.getNombre(), dto.getObservaciones(), tipos);
+            URI location = uriInfo.getAbsolutePathBuilder().path(String.valueOf(nuevoProducto.getIdProducto())).build();
+            return Response.created(location).entity(nuevoProducto).build();
+
+        } catch (IllegalArgumentException e) {
+            LOGGER.log(Level.WARNING, "Error al crear producto: {0}", e.getMessage());
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al crear producto");
-            return Response.serverError()
-                    .entity("Error: " + e.getMessage())
-                    .build();
+            LOGGER.log(Level.SEVERE, "Error inesperado al crear producto", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error interno al crear el producto.").build();
         }
     }
 
     @PUT
-    @Path("{id}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("id") Long id, Producto producto) {
-        try {
-            Producto existente = pBean.findById(id);
-            if (existente == null) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-            producto.setIdProducto(id); // Mantener consistencia del ID
-            pBean.update(producto);
-            LOGGER.log(Level.INFO, "Producto actualizado ID: {0}", id);
-            return Response.ok(producto).build();
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al actualizar producto ID: {0}", id);
-            return Response.serverError()
-                    .entity("Error: " + e.getMessage())
-                    .build();
+    @Path("/{id}")
+    public Response actualizarProducto(@PathParam("id") Long idProducto, ProductoDTO dto) { // Elimina @Valid
+        if (dto == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                           .entity("Cuerpo de la solicitud no puede estar vacío.")
+                           .build();
         }
+        try {
+            // Validar nombre manualmente si está presente
+            if (dto.getNombre() != null && dto.getNombre().isBlank()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                               .entity("El nombre no puede estar vacío.")
+                               .build();
+            }
+
+            Producto actualizado = productoBean.actualizarProducto(
+                idProducto, 
+                dto.getNombre(), 
+                dto.getObservaciones(), 
+                dto.getActivo()
+            );
+
+            if (actualizado != null) {
+                return Response.ok(actualizado).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND).entity("Producto no encontrado.").build();
+            }
+        } catch (IllegalArgumentException e) {
+            LOGGER.log(Level.WARNING, "Error al actualizar producto {0}: {1}", new Object[]{idProducto, e.getMessage()});
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error inesperado al actualizar producto " + idProducto, e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error interno al actualizar el producto.").build();
+        }
+    }
+    
+    
+    @GET
+    @Path("/{id}")
+    public Response buscarPorId(@PathParam("id") Long idProducto) {
+        Producto producto = productoBean.findById(idProducto);
+        if (producto != null) {
+            return Response.ok(producto).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).entity("Producto no encontrado.").build();
+        }
+    }
+
+    @GET
+    public Response buscarProductos(@QueryParam("nombre") String patron) {
+        List<Producto> productos;
+        if (patron != null && !patron.isBlank()) {
+            productos = productoBean.buscarPorNombre(patron);
+        } else {
+            productos = productoBean.findAll(); // Asume que findAll() existe en AbstractDataAccess o ProductoBean
+        }
+        return Response.ok(productos).build();
+    }
+
+    @GET
+    @Path("/activos")
+    public Response listarProductosActivos() {
+        List<Producto> productos = productoBean.listarActivos();
+        return Response.ok(productos).build();
     }
 
     @DELETE
-    @Path("{id}")
-    public Response delete(@PathParam("id") Long id) {
+    @Path("/{id}")
+    public Response desactivarProducto(@PathParam("id") Long idProducto) {
         try {
-            Producto producto = pBean.findById(id);
-            if (producto == null) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-            pBean.delete(producto);
-            LOGGER.log(Level.INFO, "Producto eliminado ID: {0}", id);
-            return Response.noContent().build();
+             Producto producto = productoBean.findById(idProducto);
+             if (producto == null) {
+                 return Response.status(Response.Status.NOT_FOUND).entity("Producto no encontrado.").build();
+             }
+            productoBean.desactivarProducto(idProducto);
+            return Response.noContent().build(); // 204 No Content
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al eliminar producto ID: {0}", id);
-            return Response.serverError()
-                    .entity("Error: " + e.getMessage())
-                    .build();
+             LOGGER.log(Level.SEVERE, "Error inesperado al desactivar producto " + idProducto, e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error interno al desactivar el producto.").build();
         }
     }
 
-    // Métodos específicos de Producto
-    @GET
-    @Path("activos")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response listarActivos() {
-        try {
-            List<Producto> activos = pBean.listarActivos();
-            return Response.ok(activos).build();
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al listar productos activos");
-            return Response.serverError()
-                    .entity(Collections.emptyList())
-                    .build();
+    @PUT // O POST si se prefiere crear un sub-recurso
+    @Path("/{id}/precio")
+    public Response establecerPrecio(@PathParam("id") Long idProducto, @Valid PrecioDTO dto) {
+         if (dto == null || dto.getPrecio() == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Precio es requerido.").build();
         }
-    }
-
-    @GET
-    @Path("buscar")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response buscarPorNombre(@QueryParam("keyword") String keyword) {
         try {
-            if (keyword == null || keyword.isEmpty()) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("Parámetro 'keyword' requerido")
-                        .build();
-            }
-            List<Producto> resultados = pBean.buscarPorNombre(keyword);
-            return Response.ok(resultados).build();
+            ProductoPrecio nuevoPrecio = productoBean.establecerPrecio(idProducto, dto.getPrecio());
+            return Response.ok(nuevoPrecio).build(); // Devuelve el objeto ProductoPrecio creado/actualizado
+        } catch (IllegalArgumentException e) {
+            // Captura "Producto no encontrado" del bean
+            LOGGER.log(Level.WARNING, "Error al establecer precio para producto {0}: {1}", new Object[]{idProducto, e.getMessage()});
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error en búsqueda por nombre: {0}", keyword);
-            return Response.serverError()
-                    .entity(Collections.emptyList())
-                    .build();
+             LOGGER.log(Level.SEVERE, "Error inesperado al establecer precio para producto " + idProducto, e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error interno al establecer el precio.").build();
         }
     }
 
     @GET
-    @Path("{id}/precios")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response obtenerPrecios(@PathParam("id") Long id) {
+    @Path("/{id}/precio/actual")
+    public Response obtenerPrecioActual(@PathParam("id") Long idProducto) {
         try {
-            Producto producto = pBean.findById(id);
-            if (producto == null) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-            List<ProductoPrecio> precios = pBean.obtenerPrecios(producto);
-            return Response.ok(precios).build();
+            BigDecimal precio = productoBean.obtenerPrecioActual(idProducto);
+            // Envuelve el BigDecimal en un objeto JSON simple para la respuesta
+            return Response.ok(Collections.singletonMap("precioActual", precio)).build();
+        } catch (NoResultException e) {
+            LOGGER.log(Level.WARNING, "No se encontró precio actual para producto {0}", idProducto);
+            return Response.status(Response.Status.NOT_FOUND).entity("Precio actual no encontrado para este producto.").build();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al obtener precios del producto ID: {0}", id);
-            return Response.serverError()
-                    .entity(Collections.emptyList())
-                    .build();
+            LOGGER.log(Level.SEVERE, "Error inesperado al obtener precio actual para producto " + idProducto, e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error interno al obtener el precio.").build();
         }
     }
 
+     // Endpoint para obtener todos los productos (llamando a findAll del bean)
     @GET
-    @Path("{id}/precio-actual")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response obtenerPrecioActual(@PathParam("id") Long id) {
-        try {
-            Producto producto = pBean.findById(id);
-            if (producto == null) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-            ProductoPrecio precio = pBean.obtenerPrecioActual(producto);
-            return precio != null 
-                    ? Response.ok(precio).build() 
-                    : Response.status(Response.Status.NO_CONTENT).build();
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al obtener precio actual del producto ID: {0}", id);
-            return Response.serverError().build();
-        }
-    }
-
-    @POST
-    @Path("{id}/precios")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response agregarPrecio(
-            @PathParam("id") Long id,
-            @QueryParam("precio") BigDecimal precio,
-            @QueryParam("fecha") Date fechaDesde) {
-        try {
-            Producto producto = pBean.findById(id);
-            if (producto == null) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-            pBean.agregarPrecio(producto, precio, fechaDesde);
-            return Response.status(Response.Status.CREATED).build();
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al agregar precio al producto ID: {0}", id);
-            return Response.serverError()
-                    .entity("Error: " + e.getMessage())
-                    .build();
-        }
-    }
-
-    @GET
-    @Path("{id}/combos")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response obtenerCombos(@PathParam("id") Long id) {
-        try {
-            Producto producto = pBean.findById(id);
-            if (producto == null) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-            List<Combo> combos = pBean.obtenerCombos(producto);
-            return Response.ok(combos).build();
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error al obtener combos del producto ID: {0}", id);
-            return Response.serverError()
-                    .entity(Collections.emptyList())
-                    .build();
-        }
+    @Path("/todos") // Ruta explícita para evitar ambigüedad con buscarPorNombre si no se pasa query param
+    public Response obtenerTodos() {
+        List<Producto> todos = productoBean.findAll();
+        return Response.ok(todos).build();
     }
 }
-

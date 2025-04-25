@@ -11,6 +11,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
+import java.io.Serializable;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +21,6 @@ import java.util.logging.Logger;
 /**
  *
  * @author HL21029
-
  */
 public abstract  class AbstractDataAccess<T> {
         // Se parametriza para mayor seguridad de tipos
@@ -38,6 +38,17 @@ public abstract  class AbstractDataAccess<T> {
     public T findById(Long id) throws IllegalArgumentException, IllegalStateException {
         if (id == null) {
             throw new IllegalArgumentException("El parámetro id no puede ser nulo");
+        }
+        EntityManager em = getEntityManager();
+        if (em == null) {
+            throw new IllegalStateException("Error al acceder al repositorio");
+        }
+        return em.find(tipoDeDato, id);
+    }
+    
+    public T findById(Serializable id) throws IllegalArgumentException, IllegalStateException {
+        if (id == null) {
+            throw new IllegalArgumentException("El parámetro id (clave primaria compuesta) no puede ser nulo");
         }
         EntityManager em = getEntityManager();
         if (em == null) {
